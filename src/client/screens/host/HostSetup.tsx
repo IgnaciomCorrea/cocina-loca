@@ -1,11 +1,12 @@
 import { Flag, Play } from 'lucide-react';
 import { useState } from 'react';
+import { MAX_COOKS } from '../../../shared/sanitize';
 import type { RoundConfig } from '../../../shared/types';
 import { PlayerList, RoomCode, Section, TopBar } from '../../components/common';
 import { useDebouncedSync } from '../../hooks';
 import { act, useGame } from '../../store';
 import { BasketEditor } from './BasketEditor';
-import { RulesEditor } from './RulesEditor';
+import { RoundEditor } from './RoundEditor';
 
 export function HostSetup() {
   const view = useGame((s) => s.view)!;
@@ -19,7 +20,6 @@ export function HostSetup() {
   const problems: string[] = [];
   if (config.basket.length < 3) problems.push('Agregá al menos 3 ingredientes a la canasta.');
   if (cooks.length === 0) problems.push('Esperá a que se una al menos un cocinero.');
-  if (config.rules.minIngredients > config.basket.length) problems.push('El mínimo de ingredientes supera el tamaño de la canasta.');
 
   const start = async () => {
     setStarting(true);
@@ -27,13 +27,6 @@ export function HostSetup() {
     const saved = await act('host:config', config);
     if (saved) await act('host:start');
     setStarting(false);
-  };
-
-  const toggleRequired = (id: string) => {
-    setConfig((prev) => {
-      const req = prev.rules.requiredIngredientIds;
-      return { ...prev, rules: { ...prev.rules, requiredIngredientIds: req.includes(id) ? req.filter((x) => x !== id) : [...req, id] } };
-    });
   };
 
   return (
@@ -45,27 +38,14 @@ export function HostSetup() {
             <div className="rounded-2xl bg-yema-soft px-5 py-4">
               <h1 className="text-xl font-bold">Prepará la primera ronda</h1>
               <p className="mt-1 max-w-prose text-[15px] leading-relaxed">
-                Armá la canasta y las reglas mientras se suman los cocineros. Ellos no ven nada hasta que empiece la ronda.
+                Armá la canasta mientras se suman los cocineros. Ellos no ven nada hasta que empiece la ronda.
               </p>
             </div>
           )}
           <BasketEditor
             basket={config.basket}
-            required={config.rules.requiredIngredientIds}
             roundNumber={nextRound}
-            onChange={(update) =>
-              setConfig((prev) => {
-                const basket = update(prev.basket);
-                return {
-                  basket,
-                  rules: {
-                    ...prev.rules,
-                    requiredIngredientIds: prev.rules.requiredIngredientIds.filter((id) => basket.some((i) => i.id === id)),
-                  },
-                };
-              })
-            }
-            onToggleRequired={toggleRequired}
+            onChange={(update) => setConfig((prev) => ({ ...prev, basket: update(prev.basket) }))}
           />
         </div>
 
@@ -74,7 +54,7 @@ export function HostSetup() {
             <RoomCode code={view.code} />
             <div className="mt-4">
               <div className="mb-1 text-sm font-semibold">
-                Cocineros <span className="font-normal text-tinta-soft num">({cooks.length})</span>
+                Cocineros <span className="font-normal text-tinta-soft num">({cooks.length}/{MAX_COOKS})</span>
               </div>
               <PlayerList
                 players={cooks}
@@ -86,7 +66,7 @@ export function HostSetup() {
             </div>
           </Section>
 
-          <RulesEditor rules={config.rules} basket={config.basket} onChange={(rules) => setConfig((prev) => ({ ...prev, rules }))} />
+          <RoundEditor rules={config.rules} onChange={(rules) => setConfig((prev) => ({ ...prev, rules }))} />
 
           <Section title="Partida">
             <div className="space-y-3">

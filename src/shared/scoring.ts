@@ -5,7 +5,6 @@
 
 import { DISH_BY_ID, TECHNIQUES, familyPairing } from './dishes';
 import { CATEGORIES, toGrams } from './ingredients';
-import { checkRules } from './rules';
 import type {
   Analysis,
   CoherenceResult,
@@ -18,7 +17,6 @@ import type {
   Ingredient,
   Recipe,
   RoundConfig,
-  RoundRules,
   Selector,
   VersatilityResult,
   Verdict,
@@ -428,20 +426,16 @@ export function scoreVersatility(recipe: Recipe, previous: Recipe[]): Versatilit
 
 // ─── Puntaje combinado ──────────────────────────────────────
 
-export function weightedTotal(
-  scores: { coherence: number; creativity: number; versatility: number | null },
-  rules: RoundRules,
-): number {
-  const w = rules.weights;
+/** Cuánto pesa cada criterio en la nota. */
+export const SCORE_WEIGHTS = { coherence: 40, creativity: 40, versatility: 20 } as const;
+
+export function weightedTotal(scores: { coherence: number; creativity: number; versatility: number | null }): number {
+  const w = SCORE_WEIGHTS;
   let num = scores.coherence * w.coherence + scores.creativity * w.creativity;
   let den = w.coherence + w.creativity;
   if (scores.versatility !== null) {
     num += scores.versatility * w.versatility;
     den += w.versatility;
-  }
-  if (den === 0) {
-    const vals = [scores.coherence, scores.creativity, ...(scores.versatility !== null ? [scores.versatility] : [])];
-    return vals.reduce((a, b) => a + b, 0) / vals.length;
   }
   return num / den;
 }
@@ -464,25 +458,19 @@ export function analyzeRound(
     const others = subs.filter((o) => o.id !== s.id).map((o) => o.recipe);
     const creativity = scoreCreativity(s.recipe, config.basket, others, coherence.score);
     const versatility = scoreVersatility(s.recipe, previousByPlayer.get(s.playerId) ?? []);
-    const ruleChecks = checkRules(s.recipe, config.rules, config.basket);
-    const violations = ruleChecks.filter((c) => !c.ok).length;
     const suggestedScores = {
       coherence: coherence.score,
       creativity: creativity.score,
       versatility: versatility?.score ?? null,
     };
-    const total = clamp(
-      Math.round(weightedTotal(suggestedScores, config.rules) - violations * config.rules.penaltyPerViolation),
-      0,
-      100,
-    );
-    out.set(s.id, { coherence, creativity, versatility, ruleChecks, violations, suggested: { ...suggestedScores, total } });
+    const total = clamp(Math.round(weightedTotal(suggestedScores)), 0, 100);
+    out.set(s.id, { coherence, creativity, versatility, suggested: { ...suggestedScores, total } });
   }
   return out;
 }
 
 /** Veredicto inicial a partir de la sugerencia automática. */
-export function verdictFromSuggestion(a: Analysis, rules: RoundRules): Verdict {
+export function verdictFromSuggestion(a: Analysis): Verdict {
   return {
     coherence: a.suggested.coherence,
     creativity: a.suggested.creativity,
@@ -490,16 +478,13 @@ export function verdictFromSuggestion(a: Analysis, rules: RoundRules): Verdict {
     bonus: 0,
     comment: '',
     award: null,
-    customRuleChecks: rules.customRules.map(() => true),
   };
 }
 
 /** Puntos finales de una receta según el veredicto del juez. */
-export function pointsFromVerdict(v: Verdict, a: Analysis, rules: RoundRules): number {
-  const base = weightedTotal({ coherence: v.coherence, creativity: v.creativity, versatility: v.versatility }, rules);
-  const customFails = v.customRuleChecks.filter((ok) => !ok).length;
-  const penalty = (a.violations + customFails) * rules.penaltyPerViolation;
-  return Math.round(clamp(base + v.bonus - penalty, 0, 120));
+export function pointsFromVerdict(v: Verdict): number {
+  const base = weightedTotal({ coherence: v.coherence, creativity: v.creativity, versatility: v.versatility });
+  return Math.round(clamp(base + v.bonus, 0, 120));
 }
 
 /** Alertas para el jugador mientras cocina (sin números). */

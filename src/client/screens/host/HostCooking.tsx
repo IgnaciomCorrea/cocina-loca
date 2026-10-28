@@ -1,7 +1,5 @@
 import { Gavel, TimerReset } from 'lucide-react';
-import { checkRules } from '../../../shared/rules';
-import { emptyRecipe } from '../../../shared/sanitize';
-import { IngredientTile, PlayerList, RoomCode, RuleList, Section, TileWall, TopBar, cx } from '../../components/common';
+import { IngredientTile, PlayerList, RoomCode, Section, TileWall, TopBar, cx } from '../../components/common';
 import { formatClock, useServerNow } from '../../hooks';
 import { act, useGame } from '../../store';
 
@@ -12,8 +10,6 @@ export function HostCooking() {
   const remaining = view.endsAt ? view.endsAt - now : null;
   const delivered = view.players.filter((p) => p.status === 'entregado').length;
   const allIn = view.players.length > 0 && delivered === view.players.length;
-  // Reglas expresadas como lista (sin evaluar una receta concreta)
-  const ruleLabels = checkRules({ ...emptyRecipe(), name: 'x' }, config.rules, config.basket).filter((c) => c.id !== 'nombre' && c.id !== 'canasta');
 
   return (
     <div className="min-h-dvh pb-10">
@@ -46,12 +42,9 @@ export function HostCooking() {
           <Section title="Canasta">
             <TileWall>
               {config.basket.map((ing) => (
-                <IngredientTile key={ing.id} ing={ing} required={config.rules.requiredIngredientIds.includes(ing.id)} />
+                <IngredientTile key={ing.id} ing={ing} />
               ))}
             </TileWall>
-          </Section>
-          <Section title="Reglas">
-            <RuleList checks={ruleLabels.map((c) => ({ ...c, ok: true, detail: undefined }))} custom={config.rules.customRules} />
           </Section>
         </div>
 

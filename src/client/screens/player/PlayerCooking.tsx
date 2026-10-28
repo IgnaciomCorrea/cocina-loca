@@ -2,12 +2,11 @@ import { Minus, Pencil, Plus, Send, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { DISH_BY_ID, DISH_TYPES, TECHNIQUES } from '../../../shared/dishes';
 import { toGrams } from '../../../shared/ingredients';
-import { checkRules } from '../../../shared/rules';
 import { emptyRecipe } from '../../../shared/sanitize';
 import { draftHints } from '../../../shared/scoring';
 import type { Ingredient, Recipe, Technique } from '../../../shared/types';
 import { TECHNIQUE_IDS } from '../../../shared/types';
-import { Findings, IngredientTile, RecipeCard, RuleList, TileWall, TopBar, cx } from '../../components/common';
+import { Findings, IngredientTile, RecipeCard, TileWall, TopBar, cx } from '../../components/common';
 import { formatClock, useDebouncedSync, useServerNow } from '../../hooks';
 import { socket } from '../../socket';
 import { act, useGame } from '../../store';
@@ -25,10 +24,7 @@ export function PlayerCooking() {
   const view = useGame((s) => s.view)!;
   const config = view.config!;
   const { rules, basket } = config;
-  const allowedDishes = rules.allowedDishTypes.length ? DISH_TYPES.filter((d) => rules.allowedDishTypes.includes(d.id)) : DISH_TYPES;
-  const [recipe, setRecipe] = useState<Recipe>(
-    () => view.mySubmission?.recipe ?? view.myDraft ?? emptyRecipe(allowedDishes[0]?.id),
-  );
+  const [recipe, setRecipe] = useState<Recipe>(() => view.mySubmission?.recipe ?? view.myDraft ?? emptyRecipe());
   const submitted = !!view.mySubmission;
   const now = useServerNow();
   const remaining = view.endsAt ? view.endsAt - now : null;
@@ -39,7 +35,6 @@ export function PlayerCooking() {
 
   const byId = useMemo(() => new Map(basket.map((i) => [i.id, i])), [basket]);
   const dish = DISH_BY_ID.get(recipe.dishTypeId)!;
-  const checks = checkRules(recipe, rules, basket);
   const hints = view.settings.showHints ? draftHints(recipe, basket) : [];
   const amountOf = (id: string) => recipe.items.find((i) => i.ingredientId === id)?.amount;
   const total = recipe.items.reduce((a, it) => a + (byId.get(it.ingredientId) ? toGrams(byId.get(it.ingredientId)!, it.amount) : 0), 0);
@@ -61,8 +56,6 @@ export function PlayerCooking() {
   };
 
   const submit = async () => {
-    const failing = checks.filter((c) => !c.ok);
-    if (failing.length && !window.confirm(`Tu plato no cumple ${failing.length === 1 ? 'una regla' : `${failing.length} reglas`} y va a perder puntos. ¿Entregar igual?`)) return;
     await act('player:submit', recipe);
   };
 
@@ -112,7 +105,7 @@ export function PlayerCooking() {
               <div>
                 <div className="mb-1.5 text-sm font-semibold">Qué vas a cocinar</div>
                 <div className="flex flex-wrap gap-1.5">
-                  {allowedDishes.map((d) => (
+                  {DISH_TYPES.map((d) => (
                     <button key={d.id} type="button" className={recipe.dishTypeId === d.id ? 'chip-on' : 'chip-off'} onClick={() => pickDish(d.id)} title={d.description}>
                       {d.emoji} {d.name}
                     </button>
@@ -145,17 +138,13 @@ export function PlayerCooking() {
               <TileWall>
                 {basket.map((ing) => {
                   const amount = amountOf(ing.id);
-                  const banned = rules.bannedCategories.includes(ing.category);
                   return (
                     <IngredientTile
                       key={ing.id}
                       ing={ing}
                       selected={amount !== undefined}
                       amountLabel={amount !== undefined ? `${amount} ${unitLabel(ing)}` : undefined}
-                      required={rules.requiredIngredientIds.includes(ing.id)}
-                      banned={banned}
                       onClick={() => toggleIngredient(ing)}
-                      title={banned ? `${ing.name} (categoría prohibida en esta ronda)` : ing.name}
                     />
                   );
                 })}
@@ -236,11 +225,6 @@ export function PlayerCooking() {
               </label>
             </section>
 
-            <section className="panel p-4 sm:p-5">
-              <h2 className="mb-3 text-lg font-bold">Reglas</h2>
-              <RuleList checks={checks} custom={rules.customRules} />
-            </section>
-
             {hints.length > 0 && (
               <section className="rounded-2xl border-2 border-yema bg-yema-soft p-4 sm:p-5">
                 <h2 className="mb-2 font-bold">Ojo con esto</h2>
@@ -256,7 +240,6 @@ export function PlayerCooking() {
           <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
             <p className="min-w-0 flex-1 text-sm text-tinta-soft">
               {recipe.items.length} {recipe.items.length === 1 ? 'ingrediente' : 'ingredientes'}
-              {checks.some((c) => !c.ok) && <span className="text-tomate">, faltan reglas por cumplir</span>}
             </p>
             <button type="button" className="btn-primary px-6 py-3 text-lg" onClick={submit} disabled={recipe.items.length === 0}>
               <Send className="h-5 w-5" /> Entregar plato

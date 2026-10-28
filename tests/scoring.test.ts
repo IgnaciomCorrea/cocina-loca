@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CATALOG } from '../src/shared/ingredients';
-import { checkRules, DEFAULT_RULES, sanitizeRules } from '../src/shared/rules';
+import { DEFAULT_RULES, sanitizeRules } from '../src/shared/rules';
 import {
   analyzeRound,
   pointsFromVerdict,
@@ -109,55 +109,30 @@ describe('versatilidad', () => {
   });
 });
 
-describe('reglas del host', () => {
-  it('detecta ingredientes obligatorios, prohibidos y cantidad', () => {
-    const rules = sanitizeRules(
-      { ...DEFAULT_RULES, requiredIngredientIds: ['nueces'], bannedCategories: ['endulzantes'], maxIngredients: 5 },
-      CATALOG,
-    );
-    const checks = checkRules(bizcochuelo, rules, CATALOG);
-    const byId = Object.fromEntries(checks.map((c) => [c.id, c.ok]));
-    expect(byId['req_nueces']).toBe(false);
-    expect(byId['prohibidos']).toBe(false);
-    expect(byId['cantidad']).toBe(false);
-    expect(byId['nombre']).toBe(true);
-  });
-
-  it('rechaza ingredientes fuera de la canasta', () => {
-    const basket = CATALOG.filter((i) => ['harina', 'azucar', 'huevo'].includes(i.id));
-    const checks = checkRules(bizcochuelo, DEFAULT_RULES, basket);
-    expect(checks.find((c) => c.id === 'canasta')?.ok).toBe(false);
-  });
-
+describe('configuración de ronda', () => {
   it('sanitiza valores fuera de rango', () => {
-    const s = sanitizeRules({ minIngredients: 50, maxIngredients: -3, timeLimitSec: 99999, theme: 'x'.repeat(500) }, CATALOG);
-    expect(s.minIngredients).toBe(30);
-    expect(s.maxIngredients).toBe(30);
+    const s = sanitizeRules({ timeLimitSec: 99999, theme: 'x'.repeat(500) });
     expect(s.timeLimitSec).toBe(3600);
     expect(s.theme.length).toBe(140);
+    expect(sanitizeRules({ timeLimitSec: Number.NaN }).timeLimitSec).toBe(DEFAULT_RULES.timeLimitSec);
   });
 });
 
 describe('ronda completa', () => {
-  it('analiza y calcula puntos con penalizaciones', () => {
-    const rules = { ...DEFAULT_RULES, requiredIngredientIds: ['chocolate'] };
-    const config = { basket: CATALOG, rules };
+  it('analiza y calcula puntos', () => {
+    const config = { basket: CATALOG, rules: DEFAULT_RULES };
     const subs = [
-      { id: 's1', playerId: 'p1', recipe: bizcochuelo },
+      { id: 's1', playerId: 'p1', recipe: licuadoCarne },
       { id: 's2', playerId: 'p2', recipe: browniePicante },
     ];
     const analyses = analyzeRound(subs, config, new Map());
     const a1 = analyses.get('s1')!;
     const a2 = analyses.get('s2')!;
-    expect(a1.violations).toBeGreaterThan(0); // no usa chocolate
-    expect(a2.violations).toBe(0);
     expect(a2.suggested.total).toBeGreaterThan(a1.suggested.total);
 
-    const v = verdictFromSuggestion(a2, rules);
-    const base = pointsFromVerdict(v, a2, rules);
-    expect(pointsFromVerdict({ ...v, bonus: 10 }, a2, rules)).toBe(Math.min(120, base + 10));
-    const withCustom = { ...rules, customRules: ['Nombre con rima'] };
-    const vc = { ...verdictFromSuggestion(a2, withCustom), customRuleChecks: [false] };
-    expect(pointsFromVerdict(vc, a2, withCustom)).toBe(Math.max(0, base - rules.penaltyPerViolation));
+    const v = verdictFromSuggestion(a2);
+    const base = pointsFromVerdict(v);
+    expect(base).toBe(a2.suggested.total);
+    expect(pointsFromVerdict({ ...v, bonus: 10 })).toBe(Math.min(120, base + 10));
   });
 });

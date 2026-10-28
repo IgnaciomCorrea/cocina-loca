@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CATALOG } from '../src/shared/ingredients';
 import { DEFAULT_RULES } from '../src/shared/rules';
+import { MAX_COOKS } from '../src/shared/sanitize';
 import { GameRoom } from '../src/server/room';
 import type { Recipe } from '../src/shared/types';
 
@@ -44,6 +45,13 @@ function setup() {
 afterEach(() => vi.useRealTimers());
 
 describe('GameRoom', () => {
+  it('admite hasta 8 cocineros sin contar al juez', () => {
+    const { room } = setup();
+    for (let i = room.players.size - 1; i < MAX_COOKS; i++) room.addPlayer(`Cocinero ${i}`);
+    expect([...room.players.values()].filter((p) => !p.isHost)).toHaveLength(8);
+    expect(() => room.addPlayer('Uno más')).toThrow(/llena/);
+  });
+
   it('no permite nombres repetidos', () => {
     const { room } = setup();
     expect(() => room.addPlayer('ana')).toThrow(/en uso/);
@@ -86,7 +94,6 @@ describe('GameRoom', () => {
       bonus: 5,
       comment: '¡Muy rico!',
       award: 'plato_del_dia',
-      customRuleChecks: [],
     });
     room.publishResults(room.hostId);
     expect(room.phase).toBe('results');

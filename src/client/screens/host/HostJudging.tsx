@@ -1,9 +1,9 @@
 import { Check, Megaphone, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import { pointsFromVerdict, verdictFromSuggestion } from '../../../shared/scoring';
-import type { Analysis, Flavor, JudgingEntry, RoundRules, Verdict } from '../../../shared/types';
+import type { Analysis, Flavor, JudgingEntry, Verdict } from '../../../shared/types';
 import { AWARDS, FLAVOR_KEYS } from '../../../shared/types';
-import { Findings, Meter, Parts, RecipeCard, RuleList, TopBar, cx } from '../../components/common';
+import { Findings, Meter, Parts, RecipeCard, TopBar, cx } from '../../components/common';
 import { act, useGame } from '../../store';
 
 const FLAVOR_LABEL: Record<keyof Flavor, string> = {
@@ -78,7 +78,7 @@ export function HostJudging() {
                             <Check className={cx('h-4 w-4', active ? 'text-yema' : 'text-albahaca')} aria-label="Revisado" />
                           )}
                           <span className={cx('ml-auto text-sm font-semibold num', active ? 'text-white' : 'text-tinta-soft')}>
-                            {e.verdict ? `${pointsFromVerdict(e.verdict, e.analysis, config.rules)} pts` : `sugerido ${e.analysis.suggested.total}`}
+                            {e.verdict ? `${pointsFromVerdict(e.verdict)} pts` : `sugerido ${e.analysis.suggested.total}`}
                           </span>
                         </span>
                         <span className={cx('block truncate text-sm', active ? 'text-white/80' : 'text-tinta-soft')}>
@@ -104,21 +104,11 @@ export function HostJudging() {
                       </p>
                     }
                   />
-                  <div className="panel p-4">
-                    <h3 className="mb-2 font-bold">Reglas</h3>
-                    <RuleList checks={current.analysis.ruleChecks} />
-                    {current.analysis.violations > 0 && (
-                      <p className="mt-2 text-sm text-tomate">
-                        −{current.analysis.violations * config.rules.penaltyPerViolation} pts por{' '}
-                        {current.analysis.violations === 1 ? 'una regla incumplida' : `${current.analysis.violations} reglas incumplidas`}
-                      </p>
-                    )}
-                  </div>
                   <FlavorProfile flavor={current.analysis.coherence.flavor} />
                 </div>
                 <div className="min-w-0 space-y-4">
                   <AnalysisPanel analysis={current.analysis} />
-                  <VerdictForm entry={current} rules={config.rules} onSaved={goNext} />
+                  <VerdictForm entry={current} onSaved={goNext} />
                 </div>
               </div>
             )}
@@ -255,11 +245,11 @@ function Slider({
   );
 }
 
-function VerdictForm({ entry, rules, onSaved }: { entry: JudgingEntry; rules: RoundRules; onSaved: () => void }) {
+function VerdictForm({ entry, onSaved }: { entry: JudgingEntry; onSaved: () => void }) {
   // El componente se monta de nuevo al cambiar de plato (key), así que el estado inicial alcanza
-  const [v, setV] = useState<Verdict>(() => entry.verdict ?? verdictFromSuggestion(entry.analysis, rules));
+  const [v, setV] = useState<Verdict>(() => entry.verdict ?? verdictFromSuggestion(entry.analysis));
   const [saving, setSaving] = useState(false);
-  const points = pointsFromVerdict(v, entry.analysis, rules);
+  const points = pointsFromVerdict(v);
   const s = entry.analysis.suggested;
   const set = <K extends keyof Verdict>(k: K, val: Verdict[K]) => setV((prev) => ({ ...prev, [k]: val }));
 
@@ -284,37 +274,6 @@ function VerdictForm({ entry, rules, onSaved }: { entry: JudgingEntry; rules: Ro
         <Slider label="Versatilidad" value={v.versatility} suggested={s.versatility ?? undefined} onChange={(x) => set('versatility', x)} />
       )}
       <Slider label="Puntos extra del juez" value={v.bonus} min={-20} max={20} signed onChange={(x) => set('bonus', x)} />
-
-      {rules.customRules.length > 0 && (
-        <fieldset>
-          <legend className="mb-1.5 text-sm font-semibold">Tus reglas</legend>
-          <ul className="space-y-1.5">
-            {rules.customRules.map((r, i) => {
-              const ok = v.customRuleChecks[i] !== false;
-              return (
-                <li key={i} className="flex items-center gap-3 text-sm">
-                  <span className="flex-1">{r}</span>
-                  <div className="grid grid-cols-2 rounded-lg bg-mantel p-0.5">
-                    {[true, false].map((val) => (
-                      <button
-                        key={String(val)}
-                        type="button"
-                        onClick={() => set('customRuleChecks', rules.customRules.map((_, j) => (j === i ? val : v.customRuleChecks[j] !== false)))}
-                        className={cx(
-                          'rounded-md px-2.5 py-1 text-xs font-semibold',
-                          ok === val ? (val ? 'bg-albahaca text-white' : 'bg-tomate text-white') : 'text-tinta-soft',
-                        )}
-                      >
-                        {val ? 'Cumple' : 'No cumple'}
-                      </button>
-                    ))}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </fieldset>
-      )}
 
       <fieldset>
         <legend className="mb-1.5 text-sm font-semibold">Mención especial</legend>

@@ -99,7 +99,7 @@ export interface Ingredient {
   custom?: boolean;
 }
 
-export const TECHNIQUE_IDS = ['hornear', 'hervir', 'saltear', 'freir', 'plancha', 'crudo', 'licuar', 'heladera'] as const;
+export const TECHNIQUE_IDS = ['hornear', 'hervir', 'saltear', 'freir', 'plancha', 'parrilla', 'crudo', 'licuar', 'heladera'] as const;
 export type Technique = (typeof TECHNIQUE_IDS)[number];
 
 export type DishProfile = 'dulce' | 'salado' | 'neutro';
@@ -156,47 +156,18 @@ export interface Recipe {
   items: RecipeItem[];
 }
 
-// ─── Reglas de ronda (definidas por el host) ───────────────
-
-export interface ScoreWeights {
-  coherence: number;
-  creativity: number;
-  versatility: number;
-}
+// ─── Configuración de ronda (definida por el host) ─────────
 
 export interface RoundRules {
   /** Consigna libre, ej. "Un postre para un día de lluvia". */
   theme: string;
   /** Segundos; 0 = sin límite. */
   timeLimitSec: number;
-  /** Tipos de plato permitidos; vacío = todos. */
-  allowedDishTypes: string[];
-  requiredProfile: 'any' | 'dulce' | 'salado';
-  minIngredients: number;
-  maxIngredients: number;
-  /** Ingredientes de la canasta que deben usarse sí o sí. */
-  requiredIngredientIds: string[];
-  /** Categorías prohibidas. */
-  bannedCategories: Category[];
-  /** Peso total máximo en gramos; null = sin límite. */
-  maxTotalGrams: number | null;
-  /** Reglas libres que el host verifica a mano al juzgar. */
-  customRules: string[];
-  weights: ScoreWeights;
-  /** Puntos que se restan por cada regla incumplida. */
-  penaltyPerViolation: number;
 }
 
 export interface RoundConfig {
   basket: Ingredient[];
   rules: RoundRules;
-}
-
-export interface RuleCheck {
-  id: string;
-  label: string;
-  ok: boolean;
-  detail?: string;
 }
 
 // ─── Análisis automático ────────────────────────────────────
@@ -244,8 +215,6 @@ export interface Analysis {
   creativity: CreativityResult;
   /** null en la primera receta del jugador. */
   versatility: VersatilityResult | null;
-  ruleChecks: RuleCheck[];
-  violations: number;
   suggested: {
     coherence: number;
     creativity: number;
@@ -274,8 +243,6 @@ export interface Verdict {
   bonus: number;
   comment: string;
   award: AwardId | null;
-  /** Resultado de cada regla libre (mismo orden que rules.customRules). */
-  customRuleChecks: boolean[];
 }
 
 // ─── Vistas que envía el servidor ───────────────────────────

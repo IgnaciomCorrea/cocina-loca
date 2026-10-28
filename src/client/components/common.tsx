@@ -3,7 +3,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useState, type ReactNode } from 'react';
 import { DISH_BY_ID, TECHNIQUES } from '../../shared/dishes';
 import { formatAmount, toGrams } from '../../shared/ingredients';
-import type { Finding, Ingredient, PublicPlayer, Recipe, RuleCheck, ScorePart } from '../../shared/types';
+import type { Finding, Ingredient, PublicPlayer, Recipe, ScorePart } from '../../shared/types';
 import { useGame } from '../store';
 
 export function cx(...parts: Array<string | false | null | undefined>) {
@@ -16,14 +16,12 @@ interface TileProps {
   ing: Ingredient;
   selected?: boolean;
   amountLabel?: string;
-  required?: boolean;
-  banned?: boolean;
   onClick?: () => void;
   size?: 'md' | 'sm';
   title?: string;
 }
 
-export function IngredientTile({ ing, selected, amountLabel, required, banned, onClick, size = 'md', title }: TileProps) {
+export function IngredientTile({ ing, selected, amountLabel, onClick, size = 'md', title }: TileProps) {
   const Tag = onClick ? 'button' : 'div';
   return (
     <Tag
@@ -36,7 +34,6 @@ export function IngredientTile({ ing, selected, amountLabel, required, banned, o
         'shadow-[inset_0_-3px_0_rgba(0,0,0,0.08)] transition-transform',
         onClick && 'cursor-pointer hover:-translate-y-0.5',
         selected && 'bg-yema-soft ring-4 ring-yema',
-        banned && 'opacity-40 grayscale',
       )}
     >
       <span className={cx('leading-none', size === 'md' ? 'text-4xl' : 'text-2xl')} aria-hidden>
@@ -45,11 +42,6 @@ export function IngredientTile({ ing, selected, amountLabel, required, banned, o
       <span className={cx('line-clamp-2 leading-tight font-medium text-tinta', size === 'md' ? 'text-[13px]' : 'text-[11px]')}>
         {ing.name}
       </span>
-      {required && (
-        <span className="absolute top-1 left-1 rounded-full bg-tomate px-1.5 text-[10px] font-bold text-white" title="Obligatorio">
-          ★
-        </span>
-      )}
       {ing.custom && (
         <span className="absolute top-1 right-1 rounded-full bg-azulejo px-1.5 text-[10px] font-bold text-white" title="Ingrediente especial del juez">
           ✦
@@ -126,38 +118,6 @@ export function Parts({ parts }: { parts: ScorePart[] }) {
         </div>
       ))}
     </dl>
-  );
-}
-
-// ─── Reglas ────────────────────────────────────────────────
-
-export function RuleList({ checks, custom }: { checks: RuleCheck[]; custom?: string[] }) {
-  return (
-    <ul className="space-y-1.5">
-      {checks.map((c) => (
-        <li key={c.id} className="flex gap-2 text-sm leading-snug">
-          {c.ok ? (
-            <Check className="mt-0.5 h-4 w-4 shrink-0 text-albahaca" aria-label="Cumple" />
-          ) : (
-            <X className="mt-0.5 h-4 w-4 shrink-0 text-tomate" aria-label="No cumple" />
-          )}
-          <span className={cx(!c.ok && 'font-medium')}>
-            {c.label}
-            {c.detail && <span className="text-tinta-soft"> ({c.detail})</span>}
-          </span>
-        </li>
-      ))}
-      {custom?.map((r, i) => (
-        <li key={`c${i}`} className="flex gap-2 text-sm leading-snug">
-          <span className="mt-0.5 h-4 w-4 shrink-0 text-center text-xs leading-4 text-azulejo" aria-hidden>
-            ✎
-          </span>
-          <span>
-            {r} <span className="text-tinta-soft">(la evalúa el juez)</span>
-          </span>
-        </li>
-      ))}
-    </ul>
   );
 }
 

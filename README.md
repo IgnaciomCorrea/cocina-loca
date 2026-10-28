@@ -1,6 +1,6 @@
 # 🍳 Cocina Loca
 
-Juego de cocina multijugador para el navegador. Un **juez** (el host) crea una sala, arma la canasta de ingredientes y define las reglas de cada ronda. Los **cocineros** entran con un código, inventan un plato con los ingredientes de la canasta y lo entregan antes de que termine el reloj. El juez ve un análisis automático de cada plato (coherencia, creatividad, versatilidad y reglas) y decide la nota final.
+Juego de cocina multijugador para el navegador. Un **juez** (el host) crea una sala, arma la canasta de ingredientes, elige el tiempo y, si quiere, una consigna. Hasta 8 cocineros por sala. Los **cocineros** entran con un código, inventan un plato con los ingredientes de la canasta y lo entregan antes de que termine el reloj. El juez ve un análisis automático de cada plato (coherencia, creatividad y versatilidad) y decide la nota final.
 
 ## Cómo correrlo
 
@@ -31,9 +31,9 @@ npm test
 
 ## Cómo se juega
 
-1. **Preparación** (juez): elige ingredientes del catálogo (~80), arma una canasta al azar o crea ingredientes propios con su perfil de sabor. Toca un ingrediente de la canasta para hacerlo **obligatorio**. Define la consigna, el tiempo, los tipos de plato permitidos, dulce/salado, mínimo y máximo de ingredientes, categorías prohibidas, peso máximo, reglas libres y cuánto pesa cada criterio. Hay desafíos rápidos (Postre sin azúcar, Minimalista, Ingrediente misterioso, Contrarreloj…).
-2. **Cocina** (jugadores): eligen tipo de plato, técnica, ingredientes y cantidades. Ven en vivo qué reglas cumplen y, si el juez lo permite, pistas de incoherencias ("demasiada sal para una torta").
-3. **Juzgamiento** (juez): por cada plato ve la receta, el perfil de sabor estimado, el análisis desglosado y una nota sugerida. Ajusta cada criterio, suma o resta puntos extra, marca sus reglas libres, da menciones especiales y deja un comentario. Puede juzgar a ciegas ("Plato A, B, C").
+1. **Preparación** (juez): elige ingredientes del catálogo (~170), arma una canasta al azar o crea ingredientes propios con su perfil de sabor. Elige el tiempo de la ronda y, si quiere, una consigna. No hay otras reglas: vale cualquier plato con los ingredientes de la canasta.
+2. **Cocina** (jugadores): eligen tipo de plato, técnica, ingredientes y cantidades. Si el juez lo permite, ven pistas de incoherencias ("demasiada sal para una torta").
+3. **Juzgamiento** (juez): por cada plato ve la receta, el perfil de sabor estimado, el análisis desglosado y una nota sugerida. Ajusta cada criterio, suma o resta puntos extra, da menciones especiales y deja un comentario. Puede juzgar a ciegas ("Plato A, B, C").
 4. **Resultados**: ranking de la ronda, comentarios del juez y tabla general. Al final, podio.
 
 ## El motor de análisis
@@ -50,13 +50,13 @@ Los datos que lo alimentan son fáciles de ajustar:
 | --- | --- |
 | `src/shared/ingredients.ts` | Catálogo de ingredientes y plantillas por categoría |
 | `src/shared/dishes.ts` | Tipos de plato (requisitos, proporciones, rangos de sabor) y tabla de maridajes |
-| `src/shared/rules.ts` | Reglas por defecto, desafíos rápidos y verificación de reglas |
+| `src/shared/rules.ts` | Configuración de ronda por defecto (consigna y tiempo) y su saneo |
 
 ## Estructura
 
 ```
 src/
-  shared/    Tipos, catálogo, motor de puntaje y reglas (lo usan cliente y servidor)
+  shared/    Tipos, catálogo, motor de puntaje y configuración de ronda (lo usan cliente y servidor)
   server/    Express + Socket.IO; room.ts tiene toda la lógica de la sala
   client/    React + Tailwind; screens/ separa las pantallas del juez y de los cocineros
 tests/       Tests del motor de puntaje y de la sala

@@ -29,7 +29,7 @@ export function Home() {
         <div className="text-white lg:flex-1">
           <h1 className="text-6xl leading-[0.9] font-extrabold tracking-tight sm:text-7xl">Cocina Loca</h1>
           <p className="mt-5 max-w-md text-lg leading-relaxed text-white/85">
-            Un juego de cocina para jugar en grupo. El juez arma la canasta y las reglas; ustedes inventan el plato más
+            Un juego de cocina para jugar en grupo. El juez arma la canasta; ustedes inventan el plato más
             original que tenga sentido.
           </p>
           <div className="mt-8 grid max-w-md grid-cols-5 gap-2" aria-hidden>
@@ -121,7 +121,7 @@ export function Home() {
 
             {mode === 'host' && (
               <p className="mt-4 text-sm leading-relaxed text-tinta-soft">
-                Como juez armás la canasta, definís las reglas de cada ronda y das la nota final. El juego te muestra un
+                Como juez armás la canasta de cada ronda y das la nota final. El juego te muestra un
                 análisis de cada plato para ayudarte a decidir.
               </p>
             )}

@@ -8,11 +8,9 @@ import { CustomIngredientForm } from './CustomIngredientForm';
 
 interface Props {
   basket: Ingredient[];
-  required: string[];
   roundNumber: number;
   /** Recibe una función para evitar perder cambios con clics rápidos. */
   onChange: (update: (basket: Ingredient[]) => Ingredient[]) => void;
-  onToggleRequired: (id: string) => void;
 }
 
 const normalize = (s: string) =>
@@ -21,7 +19,7 @@ const normalize = (s: string) =>
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '');
 
-export function BasketEditor({ basket, required, roundNumber, onChange, onToggleRequired }: Props) {
+export function BasketEditor({ basket, roundNumber, onChange }: Props) {
   const [query, setQuery] = useState('');
   const [cat, setCat] = useState<Category | null>(null);
   const [randomSize, setRandomSize] = useState(12);
@@ -59,12 +57,7 @@ export function BasketEditor({ basket, required, roundNumber, onChange, onToggle
           <TileWall>
             {basket.map((ing) => (
               <div key={ing.id} className="group relative">
-                <IngredientTile
-                  ing={ing}
-                  required={required.includes(ing.id)}
-                  onClick={() => onToggleRequired(ing.id)}
-                  title={required.includes(ing.id) ? `${ing.name}: obligatorio (tocá para quitar)` : `${ing.name}: tocá para hacerlo obligatorio`}
-                />
+                <IngredientTile ing={ing} />
                 <button
                   type="button"
                   onClick={() => toggle(ing)}

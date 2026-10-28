@@ -5,7 +5,7 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import { randomBasket } from '../shared/ingredients';
 import { DEFAULT_RULES, sanitizeRules } from '../shared/rules';
-import { sanitizeBasket, sanitizeRecipe } from '../shared/sanitize';
+import { MAX_COOKS, sanitizeBasket, sanitizeRecipe } from '../shared/sanitize';
 import { analyzeRound, pointsFromVerdict, verdictFromSuggestion } from '../shared/scoring';
 import type {
   Analysis,
@@ -88,7 +88,7 @@ export class GameRoom {
     if (!name) throw new GameError('Ingresá un nombre.');
     const taken = [...this.players.values()].some((p) => p.name.toLowerCase() === name.toLowerCase());
     if (taken) throw new GameError('Ese nombre ya está en uso en esta sala.');
-    if (this.players.size >= 40) throw new GameError('La sala está llena.');
+    if (!isHost && this.cooks().length >= MAX_COOKS) throw new GameError(`La sala está llena: el máximo es de ${MAX_COOKS} cocineros.`);
     if (this.phase === 'final') throw new GameError('La partida ya terminó. Esperá a que el juez inicie otra.');
     const p: PlayerRec = {
       id: randomUUID(),
@@ -161,7 +161,7 @@ export class GameRoom {
     this.requireHost(playerId);
     this.requirePhase('setup');
     const basket = sanitizeBasket(input?.basket);
-    const rules = sanitizeRules(input?.rules ?? {}, basket);
+    const rules = sanitizeRules(input?.rules ?? {});
     this.config = { basket, rules };
   }
 
@@ -171,9 +171,6 @@ export class GameRoom {
     if (this.config.basket.length < 3) throw new GameError('La canasta necesita al menos 3 ingredientes.');
     if (this.cooks().length === 0) throw new GameError('Todavía no hay cocineros en la sala.');
     const { rules } = this.config;
-    if (rules.minIngredients > this.config.basket.length) {
-      throw new GameError('El mínimo de ingredientes supera el tamaño de la canasta.');
-    }
     this.roundNumber += 1;
     this.round = {
       number: this.roundNumber,
@@ -272,8 +269,6 @@ export class GameRoom {
       const x = Math.round(Number(v));
       return Number.isFinite(x) ? Math.min(max, Math.max(min, x)) : def;
     };
-    const customCount = r.config.rules.customRules.length;
-    const checks = Array.isArray(input?.customRuleChecks) ? input.customRuleChecks : [];
     const verdict: Verdict = {
       coherence: n(input?.coherence, 0, 100, analysis.suggested.coherence),
       creativity: n(input?.creativity, 0, 100, analysis.suggested.creativity),
@@ -281,7 +276,6 @@ export class GameRoom {
       bonus: n(input?.bonus, -20, 20, 0),
       comment: typeof input?.comment === 'string' ? input.comment.trim().slice(0, 280) : '',
       award: AWARDS.some((a) => a.id === input?.award) ? (input.award as AwardId) : null,
-      customRuleChecks: Array.from({ length: customCount }, (_, i) => checks[i] !== false),
     };
     r.verdicts.set(submissionId, verdict);
   }
@@ -293,7 +287,7 @@ export class GameRoom {
     const entries: ResultEntry[] = [];
     for (const sub of r.submissions.values()) {
       const analysis = r.analyses!.get(sub.id)!;
-      const verdict = r.verdicts.get(sub.id) ?? verdictFromSuggestion(analysis, r.config.rules);
+      const verdict = r.verdicts.get(sub.id) ?? verdictFromSuggestion(analysis);
       const player = this.players.get(sub.playerId);
       entries.push({
         submissionId: sub.id,
@@ -303,7 +297,7 @@ export class GameRoom {
         recipe: sub.recipe,
         verdict,
         analysis,
-        points: pointsFromVerdict(verdict, analysis, r.config.rules),
+        points: pointsFromVerdict(verdict),
         rank: 0,
       });
     }
@@ -321,11 +315,8 @@ export class GameRoom {
   nextRound(playerId: string) {
     this.requireHost(playerId);
     this.requirePhase('results');
-    // La configuración anterior queda como punto de partida, sin ingredientes obligatorios
-    this.config = {
-      basket: this.round!.config.basket,
-      rules: { ...this.round!.config.rules, requiredIngredientIds: [] },
-    };
+    // La configuración anterior queda como punto de partida
+    this.config = structuredClone(this.round!.config);
     this.phase = 'setup';
   }
 
@@ -373,7 +364,7 @@ export class GameRoom {
     r.submissions.set(playerId, {
       id: randomUUID(),
       playerId,
-      recipe: clean,
+      recipe: { ...clean, name: clean.name || 'Plato sin nombre' },
       submittedAt: Date.now(),
       auto: false,
     });

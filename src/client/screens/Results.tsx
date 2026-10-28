@@ -1,7 +1,7 @@
 import { ChevronDown, Flag, PartyPopper, RotateCcw, SkipForward } from 'lucide-react';
 import { useState } from 'react';
 import { AWARDS } from '../../shared/types';
-import type { Ingredient, ResultEntry, RoundRules } from '../../shared/types';
+import type { Ingredient, ResultEntry } from '../../shared/types';
 import { Findings, Meter, PlayerList, RecipeCard, Section, TopBar, cx } from '../components/common';
 import { act, useGame } from '../store';
 
@@ -11,10 +11,8 @@ function award(id: string | null) {
   return AWARDS.find((a) => a.id === id);
 }
 
-function Breakdown({ e, rules, basket }: { e: ResultEntry; rules: RoundRules; basket: Ingredient[] }) {
+function Breakdown({ e, basket }: { e: ResultEntry; basket: Ingredient[] }) {
   const v = e.verdict;
-  const customFails = v.customRuleChecks.filter((ok) => !ok).length;
-  const penalty = (e.analysis.violations + customFails) * rules.penaltyPerViolation;
   const rows: Array<[string, number | null]> = [
     ['Coherencia', v.coherence],
     ['Creatividad', v.creativity],
@@ -37,12 +35,6 @@ function Breakdown({ e, rules, basket }: { e: ResultEntry; rules: RoundRules; ba
               <dd className={cx('font-semibold num', v.bonus < 0 && 'text-tomate')}>{v.bonus > 0 ? `+${v.bonus}` : v.bonus}</dd>
             </div>
           )}
-          {penalty > 0 && (
-            <div className="flex justify-between text-sm text-tomate">
-              <dt>Reglas incumplidas</dt>
-              <dd className="font-semibold num">−{penalty}</dd>
-            </div>
-          )}
         </dl>
         <div>
           <h4 className="mb-1.5 text-sm font-semibold">Lo que vio el análisis</h4>
@@ -58,7 +50,7 @@ function Breakdown({ e, rules, basket }: { e: ResultEntry; rules: RoundRules; ba
   );
 }
 
-function ResultRow({ e, mine, rules, basket }: { e: ResultEntry; mine: boolean; rules: RoundRules; basket: Ingredient[] }) {
+function ResultRow({ e, mine, basket }: { e: ResultEntry; mine: boolean; basket: Ingredient[] }) {
   const [open, setOpen] = useState(mine);
   const a = award(e.verdict.award);
   return (
@@ -92,7 +84,7 @@ function ResultRow({ e, mine, rules, basket }: { e: ResultEntry; mine: boolean; 
       )}
       {open && (
         <div className="border-t-2 border-junta p-4">
-          <Breakdown e={e} rules={rules} basket={basket} />
+          <Breakdown e={e} basket={basket} />
         </div>
       )}
     </li>
@@ -102,7 +94,6 @@ function ResultRow({ e, mine, rules, basket }: { e: ResultEntry; mine: boolean; 
 export function Results() {
   const view = useGame((s) => s.view)!;
   const results = view.results ?? [];
-  const rules = view.config!.rules;
   const winner = results[0];
   const isHost = view.me.isHost;
   const planned = view.settings.plannedRounds;
@@ -131,7 +122,7 @@ export function Results() {
       <main className="mx-auto grid grid-cols-1 max-w-5xl gap-4 px-4 py-5 lg:grid-cols-[minmax(0,1fr)_280px]">
         <ol className="min-w-0 space-y-3">
           {results.map((e) => (
-            <ResultRow key={e.submissionId} e={e} mine={e.playerId === view.me.id} rules={rules} basket={view.config!.basket} />
+            <ResultRow key={e.submissionId} e={e} mine={e.playerId === view.me.id} basket={view.config!.basket} />
           ))}
         </ol>
         <aside className="space-y-4">

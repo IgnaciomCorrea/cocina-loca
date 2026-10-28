@@ -13,6 +13,8 @@ const str = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice
 
 export const MAX_BASKET = 60;
 export const MAX_RECIPE_ITEMS = 30;
+/** Cocineros por sala (el juez no cuenta). */
+export const MAX_COOKS = 8;
 
 export function sanitizeName(v: unknown): string {
   return str(v, 20).replace(/\s+/g, ' ');

@@ -16,7 +16,7 @@ export function PlayerWaiting() {
         <section className="tiles overflow-hidden rounded-2xl px-6 py-8 text-white">
           <h1 className="text-3xl font-bold">{next === 1 ? '¡Estás adentro!' : `Se viene la ronda ${next}`}</h1>
           <p className="mt-2 max-w-prose text-white/85">
-            {view.host.name} está armando la canasta y las reglas. Cuando empiece la ronda vas a ver los ingredientes y el
+            {view.host.name} está armando la canasta. Cuando empiece la ronda vas a ver los ingredientes y el
             reloj.
           </p>
           <div className="mt-6 grid max-w-sm grid-cols-6 gap-1.5" aria-hidden>
