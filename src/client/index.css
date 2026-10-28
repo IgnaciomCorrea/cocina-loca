@@ -1,0 +1,128 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/bricolage-grotesque/opsz.css';
+
+@theme {
+  --font-sans: 'Bricolage Grotesque Variable', ui-sans-serif, system-ui, sans-serif;
+
+  --color-azulejo: #0e5e55;
+  --color-azulejo-dark: #0a4640;
+  --color-azulejo-soft: #d5e7e1;
+  --color-mantel: #f3f6f2;
+  --color-junta: #dbe4df;
+  --color-tinta: #1d2b28;
+  --color-tinta-soft: #4f625d;
+  --color-yema: #ffc93c;
+  --color-yema-dark: #e3a90f;
+  --color-yema-soft: #fff1c7;
+  --color-tomate: #e0442b;
+  --color-tomate-soft: #fbe0da;
+  --color-albahaca: #2f8f45;
+  --color-albahaca-soft: #dcf0df;
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-mantel text-tinta antialiased;
+    font-optical-sizing: auto;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-yema-dark);
+    outline-offset: 2px;
+  }
+  input,
+  textarea,
+  select {
+    @apply rounded-lg border-2 border-junta bg-white px-3 py-2 text-tinta outline-none;
+  }
+  input:focus,
+  textarea:focus,
+  select:focus {
+    @apply border-azulejo;
+  }
+  input[type='range'] {
+    @apply border-0 bg-transparent p-0;
+    accent-color: var(--color-azulejo);
+  }
+  input[type='checkbox'] {
+    @apply h-5 w-5 p-0;
+    accent-color: var(--color-azulejo);
+  }
+}
+
+@layer components {
+  /* Pared de azulejos: juntas finas sobre verde */
+  .tiles {
+    background-color: var(--color-azulejo);
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.07) 2px, transparent 2px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.07) 2px, transparent 2px);
+    background-size: 56px 56px;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 font-semibold transition-[transform,background-color] select-none disabled:cursor-not-allowed disabled:opacity-50 active:enabled:translate-y-px;
+}
+@utility btn-primary {
+  @apply btn bg-yema text-tinta shadow-[0_3px_0_var(--color-yema-dark)] hover:enabled:bg-[#ffd25c];
+}
+@utility btn-dark {
+  @apply btn bg-azulejo text-white shadow-[0_3px_0_var(--color-azulejo-dark)] hover:enabled:bg-[#127065];
+}
+@utility btn-ghost {
+  @apply btn border-2 border-junta bg-white text-tinta hover:enabled:border-tinta-soft;
+}
+@utility btn-danger {
+  @apply btn border-2 border-tomate/30 bg-white text-tomate hover:enabled:bg-tomate-soft;
+}
+@utility panel {
+  @apply rounded-2xl border-2 border-junta bg-white;
+}
+@utility chip {
+  @apply inline-flex items-center gap-1 rounded-full border-2 px-2.5 py-1 text-sm font-medium transition-colors;
+}
+@utility chip-off {
+  @apply chip border-junta bg-white text-tinta-soft hover:border-tinta-soft;
+}
+@utility chip-on {
+  @apply chip border-azulejo bg-azulejo text-white;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.85);
+  }
+  60% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.animate-pop {
+  animation: pop 220ms ease-out;
+}
+
+@keyframes bob {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-6px);
+  }
+}
