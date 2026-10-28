@@ -1,0 +1,14 @@
+# Configuración para Render (https://render.com). Render la lee al crear un "Blueprint".
+services:
+  - type: web
+    name: cocina-loca
+    runtime: node
+    plan: free # importante: sin esta línea Render usa un plan pago
+    region: virginia # la región más cercana a Sudamérica
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
